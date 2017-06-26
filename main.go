@@ -8,11 +8,11 @@ import (
 	"syscall"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/sphiecoh/servicestatus/api"
-	"github.com/sphiecoh/servicestatus/conf"
-	"github.com/sphiecoh/servicestatus/db"
-	"github.com/sphiecoh/servicestatus/monitor"
-	"github.com/sphiecoh/servicestatus/schedule"
+	"github.com/sphiecoh/apimonitor/api"
+	"github.com/sphiecoh/apimonitor/conf"
+	"github.com/sphiecoh/apimonitor/db"
+	"github.com/sphiecoh/apimonitor/monitor"
+	"github.com/sphiecoh/apimonitor/schedule"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 	flag.StringVar(&config.DbPath, "DataPath", "", "db dir")
 	flag.Parse()
 
-	store, err := db.Open(path.Join(config.DbPath, "servicestatus.db"))
+	store, err := db.Open(path.Join(config.DbPath, "apimonitor.db"))
 	if err != nil {
 		logrus.Fatal(err)
 	}

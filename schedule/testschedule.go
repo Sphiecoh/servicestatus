@@ -8,8 +8,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
-	"github.com/sphiecoh/servicestatus/db"
-	"github.com/sphiecoh/servicestatus/monitor"
+	"github.com/sphiecoh/apimonitor/db"
+	"github.com/sphiecoh/apimonitor/monitor"
 )
 
 type Scheduler struct {

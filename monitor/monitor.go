@@ -10,7 +10,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
-	"github.com/sphiecoh/servicestatus/db"
+	"github.com/sphiecoh/apimonitor/db"
 )
 
 type ApiResult struct {

@@ -6,9 +6,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/sphiecoh/servicestatus/conf"
-	"github.com/sphiecoh/servicestatus/db"
-	"github.com/sphiecoh/servicestatus/schedule"
+	"github.com/sphiecoh/apimonitor/conf"
+	"github.com/sphiecoh/apimonitor/db"
+	"github.com/sphiecoh/apimonitor/schedule"
 )
 
 type Server struct {

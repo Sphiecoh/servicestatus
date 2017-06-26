@@ -7,9 +7,9 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
-	"github.com/sphiecoh/servicestatus/db"
-	"github.com/sphiecoh/servicestatus/monitor"
-	"github.com/sphiecoh/servicestatus/schedule"
+	"github.com/sphiecoh/apimonitor/db"
+	"github.com/sphiecoh/apimonitor/monitor"
+	"github.com/sphiecoh/apimonitor/schedule"
 )
 
 func CreateTest(c echo.Context) error {
