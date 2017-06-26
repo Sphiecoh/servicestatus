@@ -8,14 +8,17 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
+	"github.com/sphiecoh/apimonitor/conf"
 	"github.com/sphiecoh/apimonitor/db"
 	"github.com/sphiecoh/apimonitor/monitor"
+	"github.com/sphiecoh/apimonitor/notification"
 )
 
 type Scheduler struct {
-	Cron  *cron.Cron
-	Jobs  []*testJob
-	Store *db.Store
+	Cron   *cron.Cron
+	Jobs   []*testJob
+	Store  *db.Store
+	Config *conf.Config
 }
 
 type testJob struct {
@@ -23,30 +26,35 @@ type testJob struct {
 	target *monitor.ApiTest
 	Next   time.Time
 	Prev   time.Time
+	Config *conf.Config
 }
 
-func ToJob(test *monitor.ApiTest, store *db.Store) *testJob {
+func ToJob(test *monitor.ApiTest, store *db.Store, conf *conf.Config) *testJob {
 	job := &testJob{
 		target: test,
 		db:     store,
+		Config: conf,
 	}
 	return job
 }
 
 //New creates a schedular
-func New(tests []*monitor.ApiTest, store *db.Store) *Scheduler {
+func New(tests []*monitor.ApiTest, store *db.Store, conf *conf.Config) *Scheduler {
 	jobs := make([]*testJob, 0)
 	for _, test := range tests {
 		job := &testJob{
 			db:     store,
 			target: test,
+			Config: conf,
 		}
 		jobs = append(jobs, job)
+		logrus.Infof("Scheduling test %s", test.Name)
 	}
 	s := &Scheduler{
-		Cron:  cron.New(),
-		Jobs:  jobs,
-		Store: store,
+		Cron:   cron.New(),
+		Jobs:   jobs,
+		Store:  store,
+		Config: conf,
 	}
 	return s
 }
@@ -71,10 +79,10 @@ func (job testJob) Run() {
 	if err != nil {
 		logrus.WithField("test", job.target.Name).Errorf("failed to marshal result json %v", err)
 	}
-	job.db.Put("results", job.target.Name, data)
+	job.db.Put(job.target.Name, []byte("results"), data)
 	if result.Error != nil {
 		logrus.WithField("test", job.target.Name).Errorf("Test failed %v", result.Status)
-		//TODO notify
+		notification.NotifySlack(result.Error.Error(), "Test failed", job.Config)
 		return
 	}
 	logrus.WithField("test", job.target.Name).Infof("Test succeeded ,status %v", result.Status)

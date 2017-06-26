@@ -5,9 +5,10 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	mid "github.com/labstack/echo/middleware"
 	"github.com/sphiecoh/apimonitor/conf"
 	"github.com/sphiecoh/apimonitor/db"
+	"github.com/sphiecoh/apimonitor/middleware"
 	"github.com/sphiecoh/apimonitor/schedule"
 )
 
@@ -21,10 +22,10 @@ func (s *Server) Start() {
 	server := echo.New()
 	server.Server.ReadTimeout = time.Second * 5
 	server.Server.WriteTimeout = time.Second * 10
-	server.Use(middleware.Logger())
-	server.Use(middleware.Recover())
-	server.Use(WithDataStore(s.DB))
-	server.Use(WithScheduler(s.Schedule))
+	server.Use(mid.Logger())
+	server.Use(mid.Recover())
+	server.Use(middleware.WithDataStore(s.DB))
+	server.Use(middleware.WithScheduler(s.Schedule))
 	server.POST("/", CreateTest)
 	logrus.Fatal(server.Start(s.Config.Port))
 }

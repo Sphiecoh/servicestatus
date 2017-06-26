@@ -8,6 +8,8 @@ import (
 
 	"fmt"
 
+	"io/ioutil"
+
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
 	"github.com/sphiecoh/apimonitor/db"
@@ -26,9 +28,7 @@ type ApiTest struct {
 	Name string
 }
 type Monitor struct {
-	Store            *db.Store
-	ResultBucketName string
-	TestBucketName   string
+	Store *db.Store
 }
 
 // Run runs the API test
@@ -46,8 +46,8 @@ func (test *ApiTest) Run() *ApiResult {
 		return result
 	} else if response.StatusCode != http.StatusOK {
 		defer response.Body.Close()
-		res := make([]byte, 0)
-		response.Body.Read(res)
+		res, _ := ioutil.ReadAll(response.Body)
+
 		result.Error = errors.New(string(res))
 	}
 	result.Status = response.StatusCode
@@ -58,7 +58,7 @@ func (test *ApiTest) Run() *ApiResult {
 func (m *Monitor) GetAllTests() ([]*ApiTest, error) {
 	result := make([]*ApiTest, 0)
 	err := m.Store.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(m.TestBucketName))
+		b := tx.Bucket(m.Store.TestBucket)
 
 		b.ForEach(func(k, v []byte) error {
 			apitest := new(ApiTest)
