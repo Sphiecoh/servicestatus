@@ -40,3 +40,10 @@ func (db *Store) RemoveBucket(name []byte) error {
 		return tx.DeleteBucket(name)
 	})
 }
+func (db *Store) Put(name, key string, data []byte) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(name))
+		return b.Put([]byte(key), data)
+
+	})
+}
