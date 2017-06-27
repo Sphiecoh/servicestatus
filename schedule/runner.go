@@ -10,27 +10,29 @@ import (
 	"github.com/robfig/cron"
 	"github.com/sphiecoh/apimonitor/conf"
 	"github.com/sphiecoh/apimonitor/db"
-	"github.com/sphiecoh/apimonitor/monitor"
 	"github.com/sphiecoh/apimonitor/notification"
 )
 
+//Scheduler mantains the jobs and crons
 type Scheduler struct {
 	Cron   *cron.Cron
-	Jobs   []*testJob
+	Jobs   []*RunnerJob
 	Store  *db.Store
 	Config *conf.Config
 }
 
-type testJob struct {
+//RunnerJob  represents the job to run by cron
+type RunnerJob struct {
 	db     *db.Store
-	target *monitor.ApiTest
+	target *db.ApiTest
 	Next   time.Time
 	Prev   time.Time
 	Config *conf.Config
 }
 
-func ToJob(test *monitor.ApiTest, store *db.Store, conf *conf.Config) *testJob {
-	job := &testJob{
+// ToJob converts a test to a job
+func ToJob(test *db.ApiTest, store *db.Store, conf *conf.Config) *RunnerJob {
+	job := &RunnerJob{
 		target: test,
 		db:     store,
 		Config: conf,
@@ -39,10 +41,10 @@ func ToJob(test *monitor.ApiTest, store *db.Store, conf *conf.Config) *testJob {
 }
 
 //New creates a schedular
-func New(tests []*monitor.ApiTest, store *db.Store, conf *conf.Config) *Scheduler {
-	jobs := make([]*testJob, 0)
+func New(tests []*db.ApiTest, store *db.Store, conf *conf.Config) *Scheduler {
+	jobs := make([]*RunnerJob, 0)
 	for _, test := range tests {
-		job := &testJob{
+		job := &RunnerJob{
 			db:     store,
 			target: test,
 			Config: conf,
@@ -70,16 +72,18 @@ func (s *Scheduler) Start() error {
 	}
 
 	s.Cron.Start()
+	logrus.Info("Started job scheduler")
 	return nil
 }
 
-func (job testJob) Run() {
+//Run runs the cron job
+func (job RunnerJob) Run() {
 	result := job.target.Run()
 	data, err := json.Marshal(result)
 	if err != nil {
 		logrus.WithField("test", job.target.Name).Errorf("failed to marshal result json %v", err)
 	}
-	job.db.Put(job.target.Name, []byte("results"), data)
+	job.db.Put(job.target.Name, job.db.ResultBucket, data)
 	if result.Error != nil {
 		logrus.WithField("test", job.target.Name).Errorf("Test failed %v", result.Status)
 		notification.NotifySlack(result.Error.Error(), "Test failed", job.Config)

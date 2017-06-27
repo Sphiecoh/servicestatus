@@ -27,5 +27,6 @@ func (s *Server) Start() {
 	server.Use(middleware.WithDataStore(s.DB))
 	server.Use(middleware.WithScheduler(s.Schedule))
 	server.POST("/", CreateTest)
+	server.GET("/", GetAll)
 	logrus.Fatal(server.Start(s.Config.Port))
 }

@@ -32,7 +32,7 @@ func NotifySlack(message, subject string, config *conf.Config) error {
 	}
 	b := bytes.NewBuffer(data)
 
-	resp, err := http.Post(config.SlackUrl, "application/json", b)
+	resp, err := http.Post(config.SlackURL, "application/json", b)
 	if err != nil {
 		return errors.Wrapf(err, "Sending data to slack failed")
 	}

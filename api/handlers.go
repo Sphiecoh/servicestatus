@@ -10,14 +10,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 	"github.com/sphiecoh/apimonitor/db"
-	"github.com/sphiecoh/apimonitor/monitor"
 	"github.com/sphiecoh/apimonitor/schedule"
 )
 
 func CreateTest(c echo.Context) error {
 	store := c.Get("store").(*db.Store)
 	sc := c.Get("schedule").(*schedule.Scheduler)
-	newtest := &monitor.ApiTest{}
+	newtest := &db.ApiTest{}
 	c.Bind(newtest)
 	data, err := json.Marshal(newtest)
 	if err != nil {
@@ -37,4 +36,15 @@ func CreateTest(c echo.Context) error {
 	sc.Cron.Schedule(schedule, job)
 	logrus.Infof("New test created %s", newtest.Name)
 	return c.JSON(http.StatusCreated, nil)
+}
+
+func GetAll(c echo.Context) error {
+
+	store := c.Get("store").(*db.Store)
+	result, err := store.GetAllTests()
+	if err != nil {
+		return err
+	}
+	c.JSON(200, result)
+	return nil
 }

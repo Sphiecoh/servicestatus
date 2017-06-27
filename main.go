@@ -8,21 +8,25 @@ import (
 	"syscall"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/caarlos0/env"
 	"github.com/sphiecoh/apimonitor/api"
 	"github.com/sphiecoh/apimonitor/conf"
 	"github.com/sphiecoh/apimonitor/db"
-	"github.com/sphiecoh/apimonitor/monitor"
 	"github.com/sphiecoh/apimonitor/schedule"
 )
 
 func main() {
-	config := &conf.Config{}
-	flag.StringVar(&config.Port, "Port", ":8090", "HTTP port to listen on")
+	config := conf.Config{}
+	flag.StringVar(&config.Port, "Port", ":8009", "HTTP port to listen on")
 	flag.StringVar(&config.DbPath, "DataPath", "", "db dir")
-	flag.StringVar(&config.SlackUrl, "SlackUrl", "https://hooks.slack.com/services/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", "Slack WebHook Url")
+	flag.StringVar(&config.SlackURL, "SlackUrl", "https://hooks.slack.com/services/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", "Slack WebHook Url")
 	flag.StringVar(&config.SlackChannel, "SlackChannel", "#general", "Slack channel")
-	flag.StringVar(&config.SlackUser, "slackuser", "", "Slack username")
+	flag.StringVar(&config.SlackUser, "slackuser", "user", "Slack username")
 	flag.Parse()
+	err := env.Parse(&config)
+	if err != nil {
+		logrus.Error(err)
+	}
 
 	store, err := db.NewStore(path.Join(config.DbPath, "apimonitor.db"))
 	if err != nil {
@@ -37,15 +41,13 @@ func main() {
 	if createerr != nil {
 		logrus.Fatal(createerr)
 	}
-	monitor := &monitor.Monitor{
-		Store: store,
-	}
-	tests, err := monitor.GetAllTests()
+
+	tests, err := store.GetAllTests()
 	if err != nil {
 		logrus.Fatal(err)
 
 	}
-	schedule := schedule.New(tests, store, config)
+	schedule := schedule.New(tests, store, &config)
 	schedulererror := schedule.Start()
 	if schedulererror != nil {
 		logrus.Fatalf("Failed to start scheduler %v", schedulererror)
@@ -53,7 +55,7 @@ func main() {
 
 	srv := &api.Server{
 		DB:       store,
-		Config:   config,
+		Config:   &config,
 		Schedule: schedule,
 	}
 	go srv.Start()

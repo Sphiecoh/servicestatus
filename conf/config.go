@@ -2,9 +2,9 @@ package conf
 
 //Config ..
 type Config struct {
-	Port         string
-	DbPath       string
-	SlackChannel string
-	SlackUser    string
-	SlackUrl     string
+	Port         string `env:"APIMON_PORT"`
+	DbPath       string `env:"APIMON_DBPath"`
+	SlackChannel string `env:"APIMON_SLACK_CHANNEL"`
+	SlackUser    string `env:"APIMON_SLACK_USER"`
+	SlackURL     string `env:"APIMON_SLACK_URL"`
 }
