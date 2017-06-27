@@ -3,8 +3,6 @@ package schedule
 import (
 	"time"
 
-	"encoding/json"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
@@ -70,7 +68,6 @@ func (s *Scheduler) Start() error {
 		}
 		s.Cron.Schedule(schedule, job)
 	}
-
 	s.Cron.Start()
 	logrus.Info("Started job scheduler")
 	return nil
@@ -79,14 +76,13 @@ func (s *Scheduler) Start() error {
 //Run runs the cron job
 func (job RunnerJob) Run() {
 	result := job.target.Run()
-	data, err := json.Marshal(result)
-	if err != nil {
-		logrus.WithField("test", job.target.Name).Errorf("failed to marshal result json %v", err)
+	if err := job.db.SaveResult(result); err != nil {
+		logrus.WithField("test", job.target.Name).Errorf("failed to save result %v", err)
 	}
-	job.db.Put(job.target.Name, job.db.ResultBucket, data)
-	if result.Error != nil {
+
+	if result.Status != 200 {
 		logrus.WithField("test", job.target.Name).Errorf("Test failed %v", result.Status)
-		notification.NotifySlack(result.Error.Error(), "Test failed", job.Config)
+		notification.NotifySlack(result.Error, "Test failed", job.Config)
 		return
 	}
 	logrus.WithField("test", job.target.Name).Infof("Test succeeded ,status %v", result.Status)

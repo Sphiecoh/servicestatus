@@ -17,6 +17,7 @@ func CreateTest(c echo.Context) error {
 	store := c.Get("store").(*db.Store)
 	sc := c.Get("schedule").(*schedule.Scheduler)
 	newtest := &db.ApiTest{}
+	newtest.ID = db.GenerateID()
 	c.Bind(newtest)
 	data, err := json.Marshal(newtest)
 	if err != nil {
@@ -38,10 +39,20 @@ func CreateTest(c echo.Context) error {
 	return c.JSON(http.StatusCreated, nil)
 }
 
-func GetAll(c echo.Context) error {
+func GetAllTests(c echo.Context) error {
 
 	store := c.Get("store").(*db.Store)
 	result, err := store.GetAllTests()
+	if err != nil {
+		return err
+	}
+	c.JSON(200, result)
+	return nil
+}
+func GetTestResult(c echo.Context) error {
+	id := c.Param("id")
+	store := c.Get("store").(*db.Store)
+	result, err := store.GetResultsByTest(id)
 	if err != nil {
 		return err
 	}

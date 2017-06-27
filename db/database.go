@@ -9,6 +9,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 )
 
 // Store represent a bolt db datastore
@@ -18,17 +19,20 @@ type Store struct {
 	ResultBucket []byte
 }
 type ApiResult struct {
-	Status    int
-	Name      string
-	Error     error
-	Duration  time.Duration
-	Timestamp time.Time
+	Status    int           `json:"status,omitempty"`
+	Name      string        `json:"name,omitempty"`
+	Error     string        `json:"error,omitempty"`
+	Duration  time.Duration `json:"duration,omitempty"`
+	Timestamp time.Time     `json:"timestamp,omitempty"`
+	TestID    string        `json:"test_id,omitempty"`
 }
 type ApiTest struct {
-	Url  string
-	Cron string
-	Name string
+	URL  string `json:"url,omitempty"`
+	Cron string `json:"cron,omitempty"`
+	Name string `json:"name,omitempty"`
+	ID   string `json:"id,omitempty"`
 }
+type Results []*ApiResult
 
 // NewStore creates a new store.
 func NewStore(path string) (*Store, error) {
@@ -98,20 +102,18 @@ func (s *Store) GetAllTests() ([]*ApiTest, error) {
 	return result, err
 }
 
-func (s *Store) GetResultsByTest(name string) ([]*ApiResult, error) {
+func (s *Store) GetResultsByTest(id string) ([]*ApiResult, error) {
 	result := make([]*ApiResult, 0)
 	err := s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.ResultBucket)
-
-		b.ForEach(func(k, v []byte) error {
-			apitest := new(ApiResult)
-			err := json.Unmarshal(v, apitest)
+		res := b.Get([]byte(id))
+		if len(res) > 0 {
+			err := json.Unmarshal(res, &result)
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to unmashal json for key %s", string(k)))
+				return errors.Wrap(err, fmt.Sprintf("failed to unmashal json for key %s", id))
 			}
-			result = append(result, apitest)
-			return nil
-		})
+
+		}
 		return nil
 	})
 
@@ -125,18 +127,38 @@ func (test *ApiTest) Run() *ApiResult {
 		Name:      test.Name,
 		Timestamp: time.Now(),
 		Status:    500,
+		TestID:    test.ID,
 	}
-	response, err := http.DefaultClient.Get(test.Url)
+	response, err := http.DefaultClient.Get(test.URL)
 	result.Duration = time.Since(start)
 	if err != nil {
-		result.Error = err
+		result.Error = err.Error()
 		return result
 	} else if response.StatusCode != http.StatusOK {
 		defer response.Body.Close()
 		res, _ := ioutil.ReadAll(response.Body)
 
-		result.Error = errors.New(string(res))
+		result.Error = string(res)
 	}
 	result.Status = response.StatusCode
 	return result
+}
+
+func (s *Store) SaveResult(result *ApiResult) error {
+	results, err := s.GetResultsByTest(result.TestID)
+
+	if err != nil {
+		return errors.Wrapf(err, "Could not get results for test %s", result.TestID)
+	}
+	results = append(results, result)
+	data, jsonerr := json.Marshal(results)
+	if jsonerr != nil {
+		return errors.Wrapf(jsonerr, "Failed to mashal results")
+	}
+	return s.Put(result.TestID, s.ResultBucket, data)
+
+}
+
+func GenerateID() string {
+	return uuid.NewV4().String()
 }
