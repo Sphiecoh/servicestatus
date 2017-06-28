@@ -5,10 +5,10 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron"
 	"github.com/sphiecoh/apimonitor/conf"
 	"github.com/sphiecoh/apimonitor/db"
 	"github.com/sphiecoh/apimonitor/notification"
+	"gopkg.in/robfig/cron.v2"
 )
 
 //Scheduler mantains the jobs and crons
@@ -62,7 +62,7 @@ func New(tests []*db.ApiTest, store *db.Store, conf *conf.Config) *Scheduler {
 //Start starts the scheduler
 func (s *Scheduler) Start() error {
 	for _, job := range s.Jobs {
-		schedule, err := cron.ParseStandard(job.target.Cron)
+		schedule, err := cron.Parse(job.target.Cron)
 		if err != nil {
 			return errors.Wrapf(err, "Invalid cron %v for test %v", job.target.Cron, job.target.Name)
 		}
