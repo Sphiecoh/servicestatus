@@ -52,6 +52,7 @@ func main() {
 	if schedulererror != nil {
 		logrus.Fatalf("Failed to start scheduler %v", schedulererror)
 	}
+	defer schedule.Cron.Stop()
 
 	srv := &api.Server{
 		DB:       store,
