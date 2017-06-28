@@ -55,9 +55,8 @@ func main() {
 	defer schedule.Cron.Stop()
 
 	srv := &api.Server{
-		DB:       store,
-		Config:   &config,
-		Schedule: schedule,
+		C: &config,
+		H: api.Handler{S: schedule, Store: store},
 	}
 	go srv.Start()
 

@@ -119,6 +119,12 @@ func (s *Store) GetResultsByTest(id string) ([]*ApiResult, error) {
 
 	return result, err
 }
+func (s *Store) DeleteTest(id string) error {
+	return s.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(s.TestBucket)
+		return b.Delete([]byte(id))
+	})
+}
 
 // Run runs the API test
 func (test *ApiTest) Run() *ApiResult {

@@ -7,27 +7,22 @@ import (
 	"github.com/labstack/echo"
 	mid "github.com/labstack/echo/middleware"
 	"github.com/sphiecoh/apimonitor/conf"
-	"github.com/sphiecoh/apimonitor/db"
-	"github.com/sphiecoh/apimonitor/middleware"
-	"github.com/sphiecoh/apimonitor/schedule"
 )
 
 type Server struct {
-	Config   *conf.Config
-	DB       *db.Store
-	Schedule *schedule.Scheduler
+	C *conf.Config
+	H Handler
 }
 
-func (s *Server) Start() {
+func (srv *Server) Start() {
 	server := echo.New()
 	server.Server.ReadTimeout = time.Second * 5
 	server.Server.WriteTimeout = time.Second * 10
 	server.Use(mid.Logger())
 	server.Use(mid.Recover())
-	server.Use(middleware.WithDataStore(s.DB))
-	server.Use(middleware.WithScheduler(s.Schedule))
-	server.POST("/", CreateTest)
-	server.GET("/", GetAllTests)
-	server.GET("/:id", GetTestResult)
-	logrus.Fatal(server.Start(s.Config.Port))
+	server.POST("/", srv.H.CreateTest)
+	server.GET("/", srv.H.GetAllTests)
+	server.GET("/:id", srv.H.GetTestResult)
+	server.DELETE("/:id", srv.H.DeleteTest)
+	logrus.Fatal(server.Start(srv.C.Port))
 }
